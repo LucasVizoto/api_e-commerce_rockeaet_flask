@@ -1,0 +1,23 @@
+Construir uma api para um e-commerce back end
+gerenciamento de prod
+todo o crud em um produto
+checkout
+
+configurar o ambiente yaml
+
+Aula 2 roteamento e modelos - criação de rotas e modelo com sqlalchemy no flask
+
+aula 3 - Integrar o banco de dados local SQLite e autenticação de usuários
+
+Aula 4 Construção da APi em si
+
+aula 5 - tópico mais avançados, busca de prods com palavras chava, cuidados de implementação e implemente numa cloud
+
+-------------------------------------------------
+
+editor.swagger.io
+Excelente ferramenta para criar a documentação de uma API
+é onde criamos e planejamos a API antes de criá-la
+
+ python -m venv venv 
+ cria a venv
