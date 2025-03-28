@@ -21,3 +21,18 @@ Excelente ferramenta para criar a documentação de uma API
 
  python -m venv venv 
  cria a venv
+
+pip install -r requirements.txt
+--baixa todas as dependências que estão em requirements.txt
+----------------------------------------------------
+
+Para gerar um banco com as minhas Models eu posso simplesmente acessar o terminal e digitar 
+
+flask shell (mais ou menos um sqlplus do oracle)
+
+db.create_all() #cria todas as tabelas com base nos models
+
+db.session.commit() #commita todoas as informações da session
+---------------
+Sqlite Viewer, é uma extensão que permite ver o db sqlite através do VSCode
+
