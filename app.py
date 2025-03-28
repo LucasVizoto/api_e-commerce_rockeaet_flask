@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -24,11 +24,27 @@ class Product(db.Model):
 @app.route('/api/products/add', methods=["POST"])
 def add_product():
     data = request.json #request importado do Flask faz com que eu tenha acesso à todos os dados da requisição
-    product = Product(name=data["name"],price=data["price"],description=data.get("description", "")) 
-    # o get faz uma espécie de Coalesce ou NVL com o que for passado, se tiver, faz oq está em primeiro, caso contrário o segundo
-    db.session.add(product) #fiz o insert no banco
-    db.session.commit()
-    return "Produto cadastrado com sucesso"
+    if 'name' in data and 'price' in data: # verifico se as chaves name e price estão em data
+        product = Product(name=data["name"],price=data["price"],description=data.get("description", "")) 
+        # o get faz uma espécie de Coalesce ou NVL com o que for passado, se tiver, faz oq está em primeiro, caso contrário o segundo
+        db.session.add(product) #fiz o insert no banco
+        db.session.commit()
+        return jsonify({"message":"Product added successfully"}), 200
+    return jsonify({"message":"Invalid product data"}), 400
+# tudo que a API retorna precisa ser em JSON, por isso é feita essa tratativa
+# o segundo valor é referente à response http que esse endpoint vai retornar
+
+@app.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
+def delete_product(product_id):
+    #Recuperar o produto da base de dados
+    # verificar se existe se existe apagar
+    # se não Not Found 404
+    product = Product.query.get(product_id) #fiz basicamente um find by ID
+    if product:
+        db.session.delete(product)
+        db.session.commit()
+        return jsonify({"message":"Product deleted successfully"}), 200
+    return jsonify({"message":"Product not found"}), 404
 
 #definir uma rota raiz e a função qeu será executada ao requisitar
 @app.route('/') #aqui eu defino a "home" da API
