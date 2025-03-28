@@ -24,7 +24,11 @@ class Product(db.Model):
 @app.route('/api/products/add', methods=["POST"])
 def add_product():
     data = request.json #request importado do Flask faz com que eu tenha acesso à todos os dados da requisição
-    return data
+    product = Product(name=data["name"],price=data["price"],description=data.get("description", "")) 
+    # o get faz uma espécie de Coalesce ou NVL com o que for passado, se tiver, faz oq está em primeiro, caso contrário o segundo
+    db.session.add(product) #fiz o insert no banco
+    db.session.commit()
+    return "Produto cadastrado com sucesso"
 
 #definir uma rota raiz e a função qeu será executada ao requisitar
 @app.route('/') #aqui eu defino a "home" da API
