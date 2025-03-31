@@ -1,18 +1,41 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-
+from flask_login import UserMixin, login_user, LoginManager
 app = Flask(__name__)
 #isso instancia o aplicativo do flask
+app.config['SECRET_KEY'] = "minha_chave_123"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
 #linha de início do banco
+login_manager = LoginManager()
 db = SQLAlchemy(app)
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 CORS(app)
 # pra testar no swagger ao invés do insomnia ou postman
 
 #--------------MODELAGEM-------------#
 # Molde de linhas e colunas que vou definir pro meu banco
 # Produto [id,name, price, description]
+class User(db.Model, UserMixin,):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False, unique=True)
+    password = db.Column(db.String(80), nullable=True)
+
+# No Flask Shell, dropei tudo pra criar tudo de novo Flask migrate
+# incrimentar o banco sem perder os registros
+# >>> db.drop_all()
+# >>> db.create_all()
+# >>> db.session.commit()
+# >>> exit()
+
+#adicionando usuário
+# >>> user = User(username="admin", password="123")
+# >>> user
+# <User (transient 2130592974368)>
+# >>> user.id
+# >>> db.session.add(user)
+# >>> db.session.commit()
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -23,6 +46,16 @@ class Product(db.Model):
 #-------------ROTAS------------#
 # definir uma rota raiz, ou seja, da página inicial
 # e a função que será executada quando um usuário requisitar
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    
+    user = User.query.filter_by(username=data.get("username")).first()
+    # basicamente estou filtrando no banco os usuários pelo username e pegando o primeiro
+    if user and data.get("password") == user.password: # verificando se o usuário existe se a senha condiz com o que foi eviado
+        login_user(user)
+        return jsonify({"message":"Logged in successfully"}), 200
+    return jsonify({"message":"Unouthorized. Invalid credential"}), 401
 
 @app.route('/api/products/add', methods=["POST"])
 def add_product():
