@@ -1,12 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-
+from flask_cors import CORS
 
 app = Flask(__name__)
 #isso instancia o aplicativo do flask
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
 #linha de início do banco
 db = SQLAlchemy(app)
+CORS(app)
+# pra testar no swagger ao invés do insomnia ou postman
+
 #--------------MODELAGEM-------------#
 # Molde de linhas e colunas que vou definir pro meu banco
 # Produto [id,name, price, description]
@@ -86,11 +89,10 @@ def get_products():
         product_data = ({
             "id":product.id,
             "name":product.name,
-            "price": product.price,
-            "description":product.description            
+            "price": product.price,         
         })
         product_list.append(product_data)
-    return jsonify(product_list)
+    return jsonify(product_list), 200
 
 
 
