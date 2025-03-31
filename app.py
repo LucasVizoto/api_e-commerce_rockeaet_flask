@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_login import UserMixin, login_user, LoginManager
+from flask_login import UserMixin, login_user, LoginManager, login_required
 app = Flask(__name__)
 #isso instancia o aplicativo do flask
 app.config['SECRET_KEY'] = "minha_chave_123"
@@ -46,6 +46,10 @@ class Product(db.Model):
 #-------------ROTAS------------#
 # definir uma rota raiz, ou seja, da página inicial
 # e a função que será executada quando um usuário requisitar
+#Autenticação
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
@@ -58,6 +62,7 @@ def login():
     return jsonify({"message":"Unouthorized. Invalid credential"}), 401
 
 @app.route('/api/products/add', methods=["POST"])
+@login_required #só precisa disso pra dizer que a rota só é acessível caso logado
 def add_product():
     data = request.json #request importado do Flask faz com que eu tenha acesso à todos os dados da requisição
     if 'name' in data and 'price' in data: # verifico se as chaves name e price estão em data
@@ -71,6 +76,7 @@ def add_product():
 # o segundo valor é referente à response http que esse endpoint vai retornar
 
 @app.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
+@login_required
 def delete_product(product_id):
     #Recuperar o produto da base de dados
     # verificar se existe se existe apagar
@@ -93,8 +99,9 @@ def get_product_details(product_id):
             "description":product.description            
         }), 200
     return jsonify({"message":"Product not found"}), 404
-    
+  
 @app.route('/api/products/update/<int:product_id>', methods=["PUT"])
+@login_required
 def update_product(product_id):
     product = Product.query.get(product_id)
     if not product: # se não tem produto ele entra aqui direto
