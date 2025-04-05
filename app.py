@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 app = Flask(__name__)
 #isso instancia o aplicativo do flask
 app.config['SECRET_KEY'] = "minha_chave_123"
@@ -21,7 +21,7 @@ class User(db.Model, UserMixin,):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False, unique=True)
     password = db.Column(db.String(80), nullable=True)
-
+    cart = db.relationship('CartItem', backref='user', lazy=True) #lazy me garante que só acesso os itens do carrinho quando eu solicitar
 # No Flask Shell, dropei tudo pra criar tudo de novo Flask migrate
 # incrimentar o banco sem perder os registros
 # >>> db.drop_all()
@@ -42,6 +42,12 @@ class Product(db.Model):
     name = db.Column(db.String(120), nullable=False)
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, nullable=True)
+
+
+class CartItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
 
 #-------------ROTAS------------#
 # definir uma rota raiz, ou seja, da página inicial
@@ -68,7 +74,7 @@ def logout():
     logout_user()
     return jsonify({"message":"Logged out successfully"}), 200
 
-
+#----------------------- PRODUCTS ----------------------------#
 @app.route('/api/products/add', methods=["POST"])
 @login_required #só precisa disso pra dizer que a rota só é acessível caso logado
 def add_product():
@@ -142,8 +148,67 @@ def get_products():
         product_list.append(product_data)
     return jsonify(product_list), 200
 
+#-------------------------------- CART------------------------#
+@app.route('/api/cart/add/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_cart(product_id):
+    #Usuário
+    user = User.query.get(int(current_user.id))
+    # current user dá acesso ao usuário que está logado nesse momento
+    
+    #Produto
+    product = Product.query.get(product_id)
+    if user and product:
+        cart_item = CartItem(user_id=user.id, product_id=product.id) #criando uma instância do cart item
+        db.session.add(cart_item) # adicionei
+        db.session.commit() # salvei
 
 
+        return jsonify({"message":"Item added to cart successfully"}), 200
+    return jsonify({"message":"Failed to add item to the cart"}), 404
+
+@app.route('/api/cart/remove/<int:product_id>', methods=['DELETE'])
+@login_required
+def remove_from_cart(product_id):
+    # ao inves de ir procurar o produto e usuário pra achar o item
+    # eu consigo puxar os dois com cart ite,
+    cart_item = CartItem.query.filter_by(user_id = current_user.id, product_id=product_id).first()
+    if cart_item:
+        db.session.delete(cart_item) # apaguei
+        db.session.commit() # salvei
+        return jsonify({"message":"Item removed from cart successfully"}), 200
+    return jsonify({"message": "Failed to remove item from cart"}), 400
+
+@app.route('/api/cart', methods=['GET'])
+@login_required
+def view_cart():
+    #preciso do usuário
+    user = User.query.get(int(current_user.id))
+    cart_item = user.cart #aqui virou uma lista de itens pois foi adicionado no banco um campo para CartItens
+    cart_content = []
+    for item in cart_item:
+        product = Product.query.get(cart_item.product_id) #aqui eu pego o produto do cart item
+        #isso gera problemas de performance, logo otimizar no futuro
+        cart_content.append({
+            "id": item.id,
+            "user_id": item.user_id,
+            "product_id": item.product_id,
+            "product_name": product.name,
+            "product_price": product.price
+        })
+    return jsonify(cart_content), 200
+
+
+@app.route('/api/cart/checkout', methods=['POST'])
+@login_required 
+def checkout():
+    user = User.query.get(int(current_user))
+    cart_itens = user.cart
+    for item in cart_itens:
+        db.session.delete(item) #apaguei os itens do carrinho
+        db.session.commit() 
+        return jsonify({"message":"Checkout succesful! The cart is empty now"}), 200
+#-------------------------------------------------------------#
 #definir uma rota raiz e a função qeu será executada ao requisitar
 @app.route('/') #aqui eu defino a "home" da API
 def hello_world() -> str: #
