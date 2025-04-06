@@ -2,16 +2,16 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-app = Flask(__name__)
+application = Flask(__name__)
 #isso instancia o aplicativo do flask
-app.config['SECRET_KEY'] = "minha_chave_123"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
+application.config['SECRET_KEY'] = "minha_chave_123"
+application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
 #linha de início do banco
 login_manager = LoginManager()
-db = SQLAlchemy(app)
-login_manager.init_app(app)
+db = SQLAlchemy(application)
+login_manager.init_app(application)
 login_manager.login_view = 'login'
-CORS(app)
+CORS(application)
 # pra testar no swagger ao invés do insomnia ou postman
 
 #--------------MODELAGEM-------------#
@@ -57,7 +57,7 @@ class CartItem(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-@app.route('/login', methods=['POST'])
+@application.route('/login', methods=['POST'])
 def login():
     data = request.json
     
@@ -68,14 +68,14 @@ def login():
         return jsonify({"message":"Logged in successfully"}), 200
     return jsonify({"message":"Unouthorized. Invalid credential"}), 401
 
-@app.route('/logout', methods=['POST'])
+@application.route('/logout', methods=['POST'])
 @login_required #caso eu tente dar logout de novo ele lança 405, método não permitido
 def logout():
     logout_user()
     return jsonify({"message":"Logged out successfully"}), 200
 
 #----------------------- PRODUCTS ----------------------------#
-@app.route('/api/products/add', methods=["POST"])
+@application.route('/api/products/add', methods=["POST"])
 @login_required #só precisa disso pra dizer que a rota só é acessível caso logado
 def add_product():
     data = request.json #request importado do Flask faz com que eu tenha acesso à todos os dados da requisição
@@ -89,7 +89,7 @@ def add_product():
 # tudo que a API retorna precisa ser em JSON, por isso é feita essa tratativa
 # o segundo valor é referente à response http que esse endpoint vai retornar
 
-@app.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
+@application.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
 @login_required
 def delete_product(product_id):
     #Recuperar o produto da base de dados
@@ -102,7 +102,7 @@ def delete_product(product_id):
         return jsonify({"message":"Product deleted successfully"}), 200
     return jsonify({"message":"Product not found"}), 404
 
-@app.route('/api/products/<int:product_id>', methods=['GET'])
+@application.route('/api/products/<int:product_id>', methods=['GET'])
 def get_product_details(product_id):
     product = Product.query.get(product_id)
     if product:
@@ -114,7 +114,7 @@ def get_product_details(product_id):
         }), 200
     return jsonify({"message":"Product not found"}), 404
   
-@app.route('/api/products/update/<int:product_id>', methods=["PUT"])
+@application.route('/api/products/update/<int:product_id>', methods=["PUT"])
 @login_required
 def update_product(product_id):
     product = Product.query.get(product_id)
@@ -135,7 +135,7 @@ def update_product(product_id):
     return jsonify({"message": "Product updated successfully"}), 200  
 
 
-@app.route('/api/products', methods=["GET"])
+@application.route('/api/products', methods=["GET"])
 def get_products():
     products = Product.query.all()
     product_list = []
@@ -149,7 +149,7 @@ def get_products():
     return jsonify(product_list), 200
 
 #-------------------------------- CART------------------------#
-@app.route('/api/cart/add/<int:product_id>', methods=['POST'])
+@application.route('/api/cart/add/<int:product_id>', methods=['POST'])
 @login_required
 def add_to_cart(product_id):
     #Usuário
@@ -167,7 +167,7 @@ def add_to_cart(product_id):
         return jsonify({"message":"Item added to cart successfully"}), 200
     return jsonify({"message":"Failed to add item to the cart"}), 404
 
-@app.route('/api/cart/remove/<int:product_id>', methods=['DELETE'])
+@application.route('/api/cart/remove/<int:product_id>', methods=['DELETE'])
 @login_required
 def remove_from_cart(product_id):
     # ao inves de ir procurar o produto e usuário pra achar o item
@@ -179,7 +179,7 @@ def remove_from_cart(product_id):
         return jsonify({"message":"Item removed from cart successfully"}), 200
     return jsonify({"message": "Failed to remove item from cart"}), 400
 
-@app.route('/api/cart', methods=['GET'])
+@application.route('/api/cart', methods=['GET'])
 @login_required
 def view_cart():
     #preciso do usuário
@@ -199,7 +199,7 @@ def view_cart():
     return jsonify(cart_content), 200
 
 
-@app.route('/api/cart/checkout', methods=['POST'])
+@application.route('/api/cart/checkout', methods=['POST'])
 @login_required 
 def checkout():
     user = User.query.get(int(current_user))
@@ -210,17 +210,17 @@ def checkout():
         return jsonify({"message":"Checkout succesful! The cart is empty now"}), 200
 #-------------------------------------------------------------#
 #definir uma rota raiz e a função qeu será executada ao requisitar
-@app.route('/') #aqui eu defino a "home" da API
-def hello_world() -> str: #
-    return 'Hello World'
+@application.route('/') #aqui eu defino a "home" da API
+def initial() -> str: #
+    return 'API up'
 
-@app.shell_context_processor
+@application.shell_context_processor
 def make_shell_context() -> dict:
     return {'db': db, 'Product': Product}
 
 
 if __name__== "__main__":
-    app.run(debug=True)
+    application.run(debug=True)
     #debug=True é só em ambiente de desenvolvimento e nunca deve estar em prod
     #o debug basicamente mostra as informações de todas as requisições que baterão aqui
 

@@ -36,3 +36,46 @@ db.session.commit() #commita todoas as informações da session
 ---------------
 Sqlite Viewer, é uma extensão que permite ver o db sqlite através do VSCode
 
+------------------------------------------------------
+
+Última aula sobre como fazer o deploy da API
+
+Upload na AWS cloud
+
+AWS Elastic Beanstalk (usa ec2, s3 e cloud tudo junto)
+Ir no IAM ecriar um usuário para o seu Notebook
+Administrator Access (usuário com todos as funções)
+Create Access Key para o CLI
+Access e Secret Access Key(não dá pra recuperar mais caso perder, no caso é deletar e fazer de novo)
+
+no console:
+
+aws configure
+AWS ACCESS KEY (Colar)
+AWS SECRET KEY (Colar)
+pode ser usado o servidor padrão 
+
+-- pronto, está configurado o usuário no seu PC
+
+Instalar o EB CLI, CLI (https://github.com/aws/aws-elastic-beanstalk-cli-setup)
+
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-flask.html
+
+
+cd eb_api 
+eb init -p python-3.11 api-flask-rocketseat tutorial --region us-east-1
+
+(o nome do arquivo de inicialização precisa ser application)
+
+eb create flaks-env-dev
+(demora um pouco ksksk 5 min)
+Quando aparecer Instance Deployment completed successfully, pode clicar em ctrl+c para encerrar
+
+
+eb open flask-env-dev (inicializa)
+
+eb terminate flask-env-dev (fecha, muito importante não esquecer para nn ter uma conta milhonaria no meu cartão depois kk)
+
+
+para atualizar a api 
+eb deploy nome-do-ambiente (api-dev)
